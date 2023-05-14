@@ -123,6 +123,7 @@ class EasyNex {
      // for function writeNum() (write to numeric attribute)
     //------------------------------------------------
     const uint32_t _error = 4294967295 ;   // Hex: 0xFFFFFFFF
+    const char _endChars[4] = "\xFF\xFF\xFF";
 		String _component;     // Also used in writeStr()
     uint32_t _numVal;
     

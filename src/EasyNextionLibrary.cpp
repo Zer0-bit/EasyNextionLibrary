@@ -47,7 +47,7 @@ void EasyNex::writeNum(String compName, uint32_t val){
 	_component = compName;
 	_numVal = val;
   
-	_serial->print(_component + "=" + _numVal + "\xFF\xFF\xFF");
+	_serial->print(_component + "=" + _numVal + _endChars);
 }
 
 
@@ -63,9 +63,9 @@ void EasyNex::writeStr(String command, String txt){
 	_strVal = txt;
   
   if(_strVal == "cmd")
-    _serial->print(_component + "\xFF\xFF\xFF");
+    _serial->print(_component + _endChars);
   else if(_strVal != "cmd")
-    _serial->print(_component + "=\"" + _strVal + "\"" + "\xFF\xFF\xFF");
+    _serial->print(_component + "=\"" + _strVal + "\"" + _endChars);
 }
 
 String EasyNex::readStr(String TextComponent){
@@ -87,7 +87,7 @@ String EasyNex::readStr(String TextComponent){
   
   // As there are NO bytes left in Serial, which means no further commands need to be executed,
   // send a "get" command to Nextion
-  _serial->print("get " + textComponent + "\xFF\xFF\xFF"); // The String of a component you want to read on Nextion
+  _serial->print("get " + _Textcomp + _endChars); // The String of a component you want to read on Nextion
   
   // And now we are waiting for a reurn data in the following format:
   // 0x70 ... (each character of the String is represented in HEX) ... 0xFF 0xFF 0xFF
@@ -128,7 +128,7 @@ String EasyNex::readStr(String TextComponent){
           char tempChar = _serial->read();
           _readString += tempChar;
           
-          if (_readString.length() >= 3 && _readString.substring(_readString.length() - 3) == "\xFF\xFF\xFF") {
+          if (_readString.length() >= 3 && _readString.substring(_readString.length() - 3) == _endChars) {
             _endOfCommandFound = true;
             _readString.remove(_readString.length() - 3); // Remove the end bytes from the _readString
           }
@@ -175,7 +175,7 @@ uint32_t EasyNex::readNumber(String component){
   // As there are NO bytes left in Serial, which means no further commands need to be executed,
   // send a "get" command to Nextion
   
-  _serial->print("get " + _comp + "\xFF\xFF\xFF"); // The String of a component you want to read on Nextion
+  _serial->print("get " + _comp + _endChars); // The String of a component you want to read on Nextion
   
   // And now we are waiting for a reurn data in the following format:
   // 0x71 0x01 0x02 0x03 0x04 0xFF 0xFF 0xFF
