@@ -221,7 +221,7 @@ uint32_t EasyNex::readNumber(String component){
         
         _tempChar = _serial->read();  // Read the next byte of the Serial
          
-        if(_tempChar == 0xFF || _tempChar == 0xFFFFFFFF){  // If the read byte is the end command byte, 
+        if(_tempChar == 0xFF){  // If the read byte is the end command byte, 
           _endBytes++ ;      // Add one to the _endBytes counter
           if(_endBytes == 3){  
             _endOfCommandFound = true;  // If the counter is equal to 3, we have the end command
