@@ -47,10 +47,7 @@ void EasyNex::writeNum(String compName, uint32_t val){
 	_component = compName;
 	_numVal = val;
   
-	_serial->print(_component);
-  _serial->print("=");
-  _serial->print(_numVal);
-	_serial->print("\xFF\xFF\xFF");
+	_serial->print(_component + "=" + _numVal + "\xFF\xFF\xFF");
 }
 
 
@@ -65,17 +62,10 @@ void EasyNex::writeStr(String command, String txt){
 	_component = command;
 	_strVal = txt;
   
-  if(_strVal == "cmd"){
-    _serial->print(_component);
-    _serial->print("\xFF\xFF\xFF");
-    
-  }else if(_strVal != "cmd"){
-    _serial->print(_component);
-    _serial->print("=\"");
-    _serial->print(_strVal);
-    _serial->print("\"");
-    _serial->print("\xFF\xFF\xFF");
-  }
+  if(_strVal == "cmd")
+    _serial->print(_component + "\xFF\xFF\xFF");
+  else if(_strVal != "cmd")
+    _serial->print(_component + "=\"" + _strVal + "\"" + "\xFF\xFF\xFF");
 }
 
 String EasyNex::readStr(String TextComponent){
@@ -97,10 +87,7 @@ String EasyNex::readStr(String TextComponent){
   
   // As there are NO bytes left in Serial, which means no further commands need to be executed,
   // send a "get" command to Nextion
-  
-  _serial->print("get ");
-  _serial->print(_Textcomp);             // The String of a component you want to read on Nextion
-	_serial->print("\xFF\xFF\xFF");
+  _serial->print("get " + textComponent + "\xFF\xFF\xFF"); // The String of a component you want to read on Nextion
   
   // And now we are waiting for a reurn data in the following format:
   // 0x70 ... (each character of the String is represented in HEX) ... 0xFF 0xFF 0xFF
@@ -132,30 +119,24 @@ String EasyNex::readStr(String TextComponent){
       }   
     }
       
-    if(_start_char == 0x70){  // If the return code 0x70 is detected,   
-      _readString = "";   // We clear the _readString variable, to avoid any accidentally stored text
-      int _endBytes = 0;  // This variable helps us count the end command bytes of Nextion. The 0xFF 0xFF 0xFF
-      _tmr1 = millis(); 
+    if (_start_char == 0x70) {
+      _readString = "";
+      unsigned long startTime = millis();
       
-      while(_endOfCommandFound == false){  // As long as the three 0xFF bytes have NOT been found, run the commands inside the loop
-        if(_serial->available()){
-          _tempChar = _serial->read();  // Read the first byte of the Serial
-         
-          if(_tempChar == 0xFF || _tempChar == 0xFFFFFFFF){  // If the read byte is the end command byte, 
-            _endBytes++ ;      // Add one to the _endBytes counter
-            if(_endBytes == 3){  
-              _endOfCommandFound = true;  // If the counter is equal to 3, we have the end command
-            }                         
-          }else{ // If the read byte is NOT the end command byte,
-            _readString += _tempChar;  // Add the char to the _readString String variable 
+      while (!_endOfCommandFound && (millis() - startTime) < 1000UL) {
+        if (_serial->available()) {
+          char tempChar = _serial->read();
+          _readString += tempChar;
+          
+          if (_readString.length() >= 3 && _readString.substring(_readString.length() - 3) == "\xFF\xFF\xFF") {
+            _endOfCommandFound = true;
+            _readString.remove(_readString.length() - 3); // Remove the end bytes from the _readString
           }
         }
-          
-        if((millis() - _tmr1) > 1000UL){     // Waiting... But not forever...... 
-          _readString = "ERROR";           // If the end of the command is NOT found in the time given,
-                                           // break the while
-          break;                           
-        }
+      }
+      
+      if (!_endOfCommandFound) {
+        _readString = "ERROR";
       }
     }
   } 
@@ -177,14 +158,14 @@ uint32_t EasyNex::readNumber(String component){
   bool _endOfCommandFound = false;
   char _tempChar;
   
-    _numberValue = 777777;                      // The function will return this number in case it fails to read the new number
+    _numberValue = _error;                      // The function will return this number in case it fails to read the new number
   
     _tmr1 = millis();  
   while(_serial->available()){                  // Waiting for NO bytes on Serial, 
                                                     // as other commands could be sent in that time.
     if((millis() - _tmr1) > 1000UL){                // Waiting... But not forever...after the timeout 
-      _numberValue = 777777;
-      break;                                // Exit from the loop due to timeout. Return 777777
+      _numberValue = _error;
+      break;                                // Exit from the loop due to timeout. Return _error
     }else{
       NextionListen();                      // We run NextionListen(), in case that the bytes on Serial are a part of a command 
     }
@@ -194,9 +175,7 @@ uint32_t EasyNex::readNumber(String component){
   // As there are NO bytes left in Serial, which means no further commands need to be executed,
   // send a "get" command to Nextion
   
-  _serial->print("get ");
-  _serial->print(_comp);             // The String of a component you want to read on Nextion
-	_serial->print("\xFF\xFF\xFF");
+  _serial->print("get " + _comp + "\xFF\xFF\xFF"); // The String of a component you want to read on Nextion
   
   // And now we are waiting for a reurn data in the following format:
   // 0x71 0x01 0x02 0x03 0x04 0xFF 0xFF 0xFF
@@ -206,8 +185,8 @@ uint32_t EasyNex::readNumber(String component){
   while(_serial->available() < 8){                  // Waiting for bytes to come to Serial, 
                                                     // we are waiting for 8 bytes
     if((millis() - _tmr1) > 400UL){                // Waiting... But not forever...after the timeout 
-       _numberValue = 777777;
-       break;                                  // Exit the loop due to timeout. Return 777777
+       _numberValue = _error;
+       break;                                  // Exit the loop due to timeout. Return _error
     }
   }
   
@@ -221,7 +200,7 @@ uint32_t EasyNex::readNumber(String component){
       }
         
       if((millis() - _tmr1) > 100UL){     // Waiting... But not forever...... 
-        _numberValue = 777777;          // If the 0x71 is not found within the given time, break the while()
+        _numberValue = _error;          // If the 0x71 is not found within the given time, break the while()
                                         // to avoid being stuck inside the while() loop
         break;
       }   
@@ -248,12 +227,12 @@ uint32_t EasyNex::readNumber(String component){
             _endOfCommandFound = true;  // If the counter is equal to 3, we have the end command
           }                         
         }else{ // If the read byte is NOT the end command byte,
-          _numberValue = 777777;
+          _numberValue = _error;
           break;            
         }
           
         if((millis() - _tmr1) > 1000UL){     // Waiting... But not forever...... 
-          _numberValue = 777777;           // If the end of the command is NOT found in the time given,
+          _numberValue = _error;           // If the end of the command is NOT found in the time given,
                                            // break the while
           break;                           
         }
@@ -261,18 +240,9 @@ uint32_t EasyNex::readNumber(String component){
     }
   }
   
-  if(_endOfCommandFound == true){
-    // We can continue with the little endian conversion
-    _numberValue = _numericBuffer[3];
-    _numberValue <<= 8;
-    _numberValue |= _numericBuffer[2];
-    _numberValue <<= 8;
-    _numberValue |= _numericBuffer[1];
-    _numberValue <<= 8;
-    _numberValue |= _numericBuffer[0];
-  }else{
-    _numberValue = 777777;
-  }
+  _numberValue = _endOfCommandFound 
+                  ? (_numericBuffer[3] << 24) | (_numericBuffer[2] << 16) | (_numericBuffer[1] << 8) | _numericBuffer[0] 
+                  : _error;
   
   return _numberValue;
 }
