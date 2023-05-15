@@ -28,7 +28,7 @@ void EasyNex::begin(unsigned long baud){
 
   _tmr1 = millis();
   while(_serial->available() > 0){     // Read the Serial until it is empty. This is used to clear Serial buffer
-    if((millis() - _tmr1) > 50UL){    // Reading... Waiting... But not forever......
+    if((millis() - _tmr1) > 100UL){    // Reading... Waiting... But not forever......
       break;
     }
       _serial->read();                // Read and delete bytes
@@ -97,7 +97,7 @@ String EasyNex::readStr(String TextComponent){
   _tmr1 = millis();
   while(_serial->available() < 4){                  // Waiting for bytes to come to Serial, an empty Textbox will send 4 bytes
                                                     // and this the minimmum number that we are waiting for (70 FF FF FF)
-    if((millis() - _tmr1) > 50UL){                // Waiting... But not forever...after the timeout
+    if((millis() - _tmr1) > 100UL){                // Waiting... But not forever...after the timeout
        _readString = "ERROR";
        break;                        // Exit the loop due to timeout. Return ERROR
     }
@@ -112,7 +112,7 @@ String EasyNex::readStr(String TextComponent){
         _start_char = _serial->read();
       }
 
-      if((millis() - _tmr1) > 20UL){     // Waiting... But not forever......
+      if((millis() - _tmr1) > 100UL){     // Waiting... But not forever......
         _readString = "ERROR";          // If the 0x70 is not found within the given time, break the while()
                                         // to avoid being stuck inside the while() loop
         break;
@@ -184,7 +184,7 @@ uint32_t EasyNex::readNumber(String component){
     _tmr1 = millis();
   while(_serial->available() < 8){                  // Waiting for bytes to come to Serial,
                                                     // we are waiting for 8 bytes
-    if((millis() - _tmr1) > 40UL){                // Waiting... But not forever...after the timeout
+    if((millis() - _tmr1) > 100UL){                // Waiting... But not forever...after the timeout
        _numberValue = _error;
        break;                                  // Exit the loop due to timeout. Return _error
     }
@@ -199,7 +199,7 @@ uint32_t EasyNex::readNumber(String component){
         _start_char = _serial->read();
       }
 
-      if((millis() - _tmr1) > 20UL){     // Waiting... But not forever......
+      if((millis() - _tmr1) > 100UL){     // Waiting... But not forever......
         _numberValue = _error;          // If the 0x71 is not found within the given time, break the while()
                                         // to avoid being stuck inside the while() loop
         break;
@@ -279,7 +279,7 @@ void EasyNex::NextionListen(){
     while(_start_char != '#'){
       _start_char = _serial->read();        // whille the start_char is not the start command symbol
                                            //  read the serial (when we read the serial the byte is deleted from the Serial buffer)
-      if((millis() - _tmr1) > 50UL){     //   Waiting... But not forever......
+      if((millis() - _tmr1) > 100UL){     //   Waiting... But not forever......
         break;
       }
     }
@@ -290,7 +290,7 @@ void EasyNex::NextionListen(){
       _cmdFound = true;
 
       while(_serial->available() < _len){     // Waiting for all the bytes that we declare with <len> to arrive
-        if((millis() - _tmr1) > 50UL){         // Waiting... But not forever......
+        if((millis() - _tmr1) > 100UL){         // Waiting... But not forever......
           _cmdFound = false;                  // tmr_1 a timer to avoid the stack in the while loop if there is not any bytes on _serial
           break;
         }
